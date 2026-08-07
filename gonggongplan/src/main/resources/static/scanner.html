@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏆 웹 색상 보물찾기 미션!</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #f0f4f8;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 16px;
+            min-height: 100vh;
+        }
+
+        /* 상단 점수판 및 미션 카드 */
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 16px 20px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .mission-title { font-size: 14px; color: #666; font-weight: bold; }
+        .mission-color { font-size: 24px; color: #2196F3; font-weight: 900; margin-top: 4px; }
+        .score-badge {
+            background: #FF9800;
+            color: white;
+            font-size: 20px;
+            font-weight: bold;
+            padding: 8px 16px;
+            border-radius: 12px;
+        }
+
+        /* 카메라 프리뷰 뷰포트 */
+        .camera-container {
+            position: relative;
+            width: 100%;
+            max-width: 480px;
+            height: 360px;
+            background: #000;
+            border-radius: 24px;
+            overflow: hidden;
+            border: 4px solid #4CAF50;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        }
+
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 조준점 타겟 */
+        .crosshair {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(0,0,0,0.5);
+            pointer-events: none;
+        }
+
+        .crosshair-dot {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 8px;
+            height: 8px;
+            background: red;
+            border-radius: 50%;
+        }
+
+        /* 축하 메시지 팝업 */
+        .success-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            font-weight: bold;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .success-overlay.show { opacity: 1; }
+
+        /* 하단 인식 상태 카드 */
+        .status-card {
+            background: white;
+            border-radius: 16px;
+            padding: 12px;
+            width: 100%;
+            max-width: 480px;
+            margin-top: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .color-preview {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 2px solid #ccc;
+            background: #000;
+        }
+
+        .status-text { font-size: 18px; font-weight: bold; color: #333; }
+
+        canvas { display: none; }
+    </style>
+</head>
+<body>
+
+<!-- 1. 상단 미션 & 점수판 -->
+<div class="card">
+    <div>
+        <div class="mission-title">🎯 미션 색상</div>
+        <div id="targetColorText" class="mission-color">[초록색] 물건을 찾으세요!</div>
+    </div>
+    <div id="scoreText" class="score-badge">0 점</div>
+</div>
+
+<!-- 2. 카메라 화면 & 조준선 -->
+<div class="camera-container">
+    <video id="videoView" autoplay playsinline></video>
+    <div class="crosshair"><div class="crosshair-dot"></div></div>
+
+    <!-- 정답 축하 팝업 -->
+    <div id="successOverlay" class="success-overlay">
+        🎉 정답입니다! +10점!
+    </div>
+</div>
+
+<!-- 3. 현재 스캔된 색상 상태 -->
+<div class="status-card">
+    <div id="colorPreview" class="color-preview"></div>
+    <div id="statusText" class="status-text">현재 인식: 탐색 중...</div>
+</div>
+
+<!-- 픽셀 추출용 숨은 캔버스 -->
+<canvas id="hiddenCanvas" width="320" height="240"></canvas>
+
+<script>
+    const video = document.getElementById('videoView');
+    const canvas = document.getElementById('hiddenCanvas');
+    const ctx = canvas.getContext('2d');
+
+    const targetColorText = document.getElementById('targetColorText');
+    const scoreText = document.getElementById('scoreText');
+    const colorPreview = document.getElementById('colorPreview');
+    const statusText = document.getElementById('statusText');
+    const successOverlay = document.getElementById('successOverlay');
+
+    const colorList = ["빨간색", "초록색", "파란색", "노란색", "주황색", "보라색"];
+    let targetColor = "초록색";
+    let score = 0;
+    let isSuccess = false;
+
+    // 1. 후면 카메라 켜기
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then(stream => { video.srcObject = stream; speakMission(); })
+        .catch(err => alert("카메라 권한이 필요합니다!"));
+
+    // 2. 음성 안내 (TTS - 브라우저 스피커로 말하기)
+    function speakMission() {
+        if ('speechSynthesis' in window) {
+            window.speechSynthesis.cancel(); // 이전 음성 취소
+            const msg = new SpeechSynthesisUtterance(`${targetColor} 물건을 찾아보세요!`);
+            msg.lang = 'ko-KR';
+            window.speechSynthesis.speak(msg);
+        }
+    }
+
+    // 3. RGB를 한글 색상 이름으로 변환
+    function getColorName(r, g, b) {
+        if (r < 50 && g < 50 && b < 50) return "검은색";
+        if (r > 200 && g > 200 && b > 200) return "흰색";
+
+        if (r > 150 && g > 150 && b < 100) return "노란색";
+        if (r > 180 && g > 90 && g < 170 && b < 80) return "주황색";
+        if (r > 140 && b > 140 && g < 100) return "보라색";
+        if (r > g + 40 && r > b + 40) return "빨간색";
+        if (g > r + 20 && g > b + 20) return "초록색";
+        if (b > r + 30 && b > g + 30) return "파란색";
+
+        return "기타 색상";
+    }
+
+    // 4. 실시간 카메라 화면 중앙 분석 (0.1초마다)
+    setInterval(() => {
+        if (video.readyState === video.HAVE_ENOUGH_DATA && !isSuccess) {
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // 중앙 픽셀 색상 읽기
+            const pixel = ctx.getImageData(canvas.width / 2, canvas.height / 2, 1, 1).data;
+            const r = pixel[0], g = pixel[1], b = pixel[2];
+            const detectedColor = getColorName(r, g, b);
+
+            // UI 업데이트
+            colorPreview.style.backgroundColor = `rgb(${r},${g},${b})`;
+            statusText.innerText = `현재 인식: ${detectedColor}`;
+
+            // 🎯 정답 판정 로직
+            if (detectedColor === targetColor) {
+                checkAnswer();
+            }
+        }
+    }, 100);
+
+    // 5. 정답 처리
+    function checkAnswer() {
+        isSuccess = true;
+        score += 10;
+        scoreText.innerText = `${score} 점`;
+
+        // 정답 팝업 표시 및 음성 칭찬
+        successOverlay.classList.add('show');
+        if ('speechSynthesis' in window) {
+            const winMsg = new SpeechSynthesisUtterance("정답입니다! 참 잘했어요!");
+            winMsg.lang = 'ko-KR';
+            window.speechSynthesis.speak(winMsg);
+        }
+
+        // 1.8초 후 다음 미션으로 변경
+        setTimeout(() => {
+            successOverlay.classList.remove('show');
+
+            // 이전과 다른 새로운 색 선택
+            const nextColors = colorList.filter(c => c !== targetColor);
+            targetColor = nextColors[Math.floor(Math.random() * nextColors.length)];
+
+            targetColorText.innerText = `[${targetColor}] 물건을 찾으세요!`;
+            speakMission();
+
+            isSuccess = false;
+        }, 1800);
+    }
+</script>
+</body>
+</html>
