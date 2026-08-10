@@ -21,7 +21,7 @@
 </head>
 <body class="bg-slate-100 min-h-screen p-4 md:p-8 font-sans">
 
-<!-- 0. 로그인 / 학생 정보 입력 화면 (초등학교, 학년, 성별 다이얼로그 개편) -->
+<!-- 0. 로그인 / 학생 정보 입력 화면 -->
 <div id="login-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl border border-slate-100 space-y-6">
         <div class="text-center space-y-2">
@@ -40,7 +40,7 @@
                        class="w-full p-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
             </div>
 
-            <!-- 2. 학년 선택 다이얼로그 (버튼 그리드 디자인) -->
+            <!-- 2. 학년 선택 다이얼로그 -->
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
                     <span>🎒</span> 학년 선택
@@ -53,11 +53,10 @@
                     <button type="button" onclick="selectGrade('5학년')" class="grade-btn py-2.5 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white text-xs font-extrabold shadow-md transition">5학년</button>
                     <button type="button" onclick="selectGrade('6학년')" class="grade-btn py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-600 hover:bg-slate-100 transition">6학년</button>
                 </div>
-                <!-- 선택된 학년 숨김 저장값 -->
                 <input type="hidden" id="input-grade" value="5학년" />
             </div>
 
-            <!-- 3. 성별 선택 다이얼로그 (이모지 카드리스트 디자인) -->
+            <!-- 3. 성별 선택 다이얼로그 -->
             <div>
                 <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
                     <span>👤</span> 성별 선택
@@ -70,7 +69,6 @@
                         <span class="text-lg">👧</span> 여학생
                     </button>
                 </div>
-                <!-- 선택된 성별 숨김 저장값 -->
                 <input type="hidden" id="input-gender" value="남학생" />
             </div>
 
@@ -84,26 +82,26 @@
 <!-- 메인 대시보드 컨테이너 -->
 <div class="max-w-6xl mx-auto space-y-6">
 
-    <!-- 기존 HTML 헤더 부분 수정 -->
-    <div class="flex items-center gap-3">
-        <span class="text-4xl">🏫</span>
-        <div>
-            <div class="flex items-center gap-2">
-                <span id="display-school-grade" class="text-xs font-bold text-indigo-600 tracking-wide uppercase">서울초등학교 5학년</span>
-                <span id="display-gender" class="text-xs font-bold text-indigo-400 bg-indigo-50 px-2 py-0.5 rounded-full">남학생</span> <!-- 👈 추가! -->
+    <!-- 헤더 영역 -->
+    <header class="flex justify-between items-center mb-8">
+        <div class="flex items-center gap-3">
+            <span class="text-4xl">🏫</span>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span id="display-school-grade" class="text-xs font-bold text-indigo-600 tracking-wide uppercase">서울초등학교 5학년</span>
+                    <span id="display-gender" class="text-xs font-bold text-indigo-400 bg-indigo-50 px-2 py-0.5 rounded-full">남학생</span>
+                </div>
+                <h1 class="text-2xl font-extrabold text-slate-800">공공 대시보드</h1>
             </div>
-            <h1 class="text-2xl font-extrabold text-slate-800">공공 대시보드</h1>
         </div>
-    </div>
 
-        <!-- 아두이노 연결 상태 버튼 -->
         <button id="arduino-btn" onclick="toggleArduino()" class="flex items-center gap-3 px-5 py-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 font-bold transition hover:bg-rose-100 active:scale-95">
             <span id="arduino-dot" class="w-3.5 h-3.5 rounded-full bg-rose-500 animate-pulse"></span>
             <span id="arduino-text">🔌 아두이노 연결하기 (미연결)</span>
         </button>
     </header>
 
-    <!-- 2. 오늘의 미션 배너 -->
+    <!-- 오늘의 미션 배너 -->
     <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-3xl p-6 text-white shadow-md flex items-center justify-between">
         <div class="space-y-1">
             <span class="bg-white/20 text-xs font-bold px-3 py-1 rounded-full backdrop-blur-md">TODAY'S MISSION</span>
@@ -112,8 +110,8 @@
         <span class="text-5xl hidden sm:inline">🚀</span>
     </div>
 
-    <!-- 3. 핵심 활동 카드 영역 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- 핵심 활동 카드 영역 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
 
         <!-- [활동 1] AI 사물 감지 스캐너 -->
         <div onclick="openScannerModal()" class="group bg-white rounded-3xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition duration-300 cursor-pointer flex flex-col justify-between">
@@ -180,9 +178,36 @@
             </div>
         </div>
 
+        <!-- [활동 4] 아두이노 반응속도 테스트 (통합형 UI) -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between overflow-hidden p-6">
+            <div>
+                <div class="flex justify-between items-start">
+                    <span class="bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-full">아두이노 미니게임</span>
+                    <span class="text-2xl">⚡</span>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 mt-4">4. 반응속도 테스트</h3>
+                <p class="text-slate-400 text-xs mt-1">아두이노 스위치를 눌러 반응속도를 측정해보세요.</p>
+
+                <!-- 게임 상태 및 메시지 박스 -->
+                <div id="reaction-bg" class="mt-4 p-4 rounded-2xl bg-slate-100 border border-slate-200 text-center transition-all duration-300">
+                    <span id="reaction-badge" class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-slate-300 text-slate-700 uppercase tracking-wide">READY</span>
+                    <p id="reaction-message" class="text-sm font-extrabold text-slate-700 mt-2">
+                        아두이노 스위치를 누르면 시작합니다!
+                    </p>
+                    <div id="reaction-time-display" class="text-2xl font-black text-indigo-600 mt-1 hidden">
+                        0 ms
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 text-xs text-center text-slate-400">
+                실시간 서버 감지 중...
+            </div>
+        </div>
+
     </div>
 
-    <!-- 4. 과목별 개별 만족도 조사 영역 -->
+    <!-- 과목별 개별 만족도 조사 영역 -->
     <div class="space-y-4 pt-4 border-t border-slate-200">
         <div class="flex justify-between items-end">
             <div>
@@ -335,7 +360,6 @@
     </div>
 
 </div>
-
 <!-- 5. AI 사물 감지 모달 (카메라 & 감지 텍스트 출력) -->
 <div id="scanner-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white w-full max-w-xl rounded-3xl flex flex-col overflow-hidden shadow-2xl border border-slate-100">
@@ -407,7 +431,7 @@
     }
 
     /* ====================================================
-       🔑 로그인 처리 및 백엔드 연동 (초등학교, 학년, 성별)
+       🔑 로그인 처리 및 백엔드 연동
     ==================================================== */
     async function handleLogin(event) {
       event.preventDefault();
@@ -440,9 +464,81 @@
         document.getElementById('login-modal').classList.add('hidden');
       }
     }
+    /* ====================================================
+   ⚡ 통합 아두이노 반응속도 게임 실시간 조회 (0.5초 주기)
+==================================================== */
+async function fetchReactionData() {
+    try {
+        const response = await fetch('/api/arduino/reaction');
+        if (!response.ok) return;
+
+        const data = await response.json();
+        // data 예시: { state: "READY", message: "초록불이 켜지면 누르세요!", time: 240 }
+
+        const bgElem = document.getElementById('reaction-bg');
+        const badgeElem = document.getElementById('reaction-badge');
+        const msgElem = document.getElementById('reaction-message');
+        const timeElem = document.getElementById('reaction-time-display');
+
+        if (!bgElem || !data) return;
+
+        // 1. 안내 메시지 업데이트
+        if (data.message) {
+            msgElem.innerText = data.message;
+        }
+
+        // 2. 게임 상태(state)에 따른 카드뷰 디자인 동적 변경
+        switch (data.state) {
+            case 'READY': // 준비 상태 (노란색/주황색)
+                badgeElem.innerText = "준비 중";
+                badgeElem.className = "text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-800";
+                bgElem.className = "mt-4 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-center transition-all";
+                timeElem.classList.add('hidden');
+                break;
+
+            case 'START': // 버튼 누를 타이밍 (초록색)
+                badgeElem.innerText = "지금 누르세요!";
+                badgeElem.className = "text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-500 text-white animate-bounce";
+                bgElem.className = "mt-4 p-4 rounded-2xl bg-emerald-100 border border-emerald-300 text-center transition-all";
+                timeElem.classList.add('hidden');
+                break;
+
+            case 'RESULT': // 결과 출력 (보라색/파란색)
+                badgeElem.innerText = "측정 완료";
+                badgeElem.className = "text-[10px] font-black px-2.5 py-0.5 rounded-full bg-indigo-200 text-indigo-800";
+                bgElem.className = "mt-4 p-4 rounded-2xl bg-indigo-50 border border-indigo-200 text-center transition-all";
+
+                if (data.time > 0) {
+                    timeElem.innerText = `${data.time} ms`;
+                    timeElem.classList.remove('hidden');
+                }
+                break;
+
+            case 'FOUL': // 실격/파울 (빨간색)
+                badgeElem.innerText = "경고";
+                badgeElem.className = "text-[10px] font-black px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-800";
+                bgElem.className = "mt-4 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-center transition-all";
+                timeElem.classList.add('hidden');
+                break;
+
+            default: // IDLE (대기 상태)
+                badgeElem.innerText = "대기 중";
+                badgeElem.className = "text-[10px] font-black px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700";
+                bgElem.className = "mt-4 p-4 rounded-2xl bg-slate-100 border border-slate-200 text-center transition-all";
+                timeElem.classList.add('hidden');
+                break;
+        }
+
+    } catch (error) {
+        console.warn("반응속도 데이터 수신 대기 중...", error);
+    }
+}
+
+// 0.5초(500ms)마다 아두이노 반응속도 상태 업데이트
+setInterval(fetchReactionData, 500);
 
     /* ====================================================
-       🔌 아두이노 및 LED 제어
+       🔌 아두이노 연결 및 통신
     ==================================================== */
     let isArduinoConnected = false;
 
@@ -456,97 +552,85 @@
         dot.className = "w-3.5 h-3.5 rounded-full bg-emerald-500 animate-ping";
         text.innerText = "🟢 아두이노 연결됨 (포트: COM3)";
         btn.className = "flex items-center gap-3 px-5 py-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold transition";
-        unlockSurvey('sensor');
+        unlockSurvey('sensor'); // 아두이노 연결 성공 시 온·습도 설문 자동 열기
       } else {
         dot.className = "w-3.5 h-3.5 rounded-full bg-rose-500 animate-pulse";
         text.innerText = "🔌 아두이노 연결하기 (미연결)";
         btn.className = "flex items-center gap-3 px-5 py-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 font-bold transition";
       }
     }
-    /* ====================================================
-       🌡️ 온습도 센서 데이터 자동 갱신 (2초 주기)
-    ==================================================== */
+
     async function fetchDhtData() {
+      if (!isArduinoConnected) return;
+
       try {
         const response = await fetch('http://localhost:8080/api/arduino/dht');
-        if (!response.ok) return;
+        if (response.ok) {
+          const data = await response.json();
+          document.getElementById('temp-val').innerText = `${data.temperature} °C`;
+          document.getElementById('hum-val').innerText = `${data.humidity} %`;
 
-        const data = await response.json();
-
-        if (data.temperature !== undefined && data.humidity !== undefined) {
-          // 화면의 온도, 습도 텍스트 변경
-          document.getElementById('temp-val').innerText = `${data.temperature.toFixed(1)} °C`;
-          document.getElementById('hum-val').innerText = `${Math.round(data.humidity)} %`;
-
-          // 온도에 따른 쾌적 상태 텍스트 변경
-          const tempStatus = document.getElementById('temp-status');
-          if (data.temperature >= 28) {
-            tempStatus.innerText = '🔥 조금 더워요';
-            tempStatus.className = 'font-bold text-rose-600';
-          } else if (data.temperature <= 18) {
-            tempStatus.innerText = '❄️ 쌀쌀해요';
-            tempStatus.className = 'font-bold text-sky-600';
+          if(data.temperature > 28) {
+            document.getElementById('temp-status').innerText = "🔥 무더움";
+            document.getElementById('temp-status').className = "font-bold text-rose-600";
           } else {
-            tempStatus.innerText = '😊 쾌적함';
-            tempStatus.className = 'font-bold text-emerald-600';
+            document.getElementById('temp-status').innerText = "😊 쾌적함";
+            document.getElementById('temp-status').className = "font-bold text-emerald-600";
           }
         }
-      } catch (error) {
-        console.error('온습도 조회 실패:', error);
+      } catch (err) {
+        console.warn('DHT 데이터 가져오기 실패:', err);
       }
     }
-
-    // 웹페이지 로드 시 2초마다 백엔드에서 온습도 값 받아오기
     setInterval(fetchDhtData, 2000);
 
-   async function changeLed(color) {
-  const status = document.getElementById('led-status');
-  const colorMap = { red: '🔴 빨간색 LED ON', green: '🟢 초록색 LED ON', blue: '🔵 파란색 LED ON', off: '꺼짐' };
+    async function changeLed(color) {
+      unlockSurvey('led'); // LED 버튼 클릭 시 무드등 설문 자동 열기
 
-  // 프론트엔드 색상명을 아두이노 백엔드 명령어(R, G, B, O)로 매핑
-  const commandMap = { red: 'R', green: 'G', blue: 'B', off: 'O' };
-  const command = commandMap[color];
+      const ledStatusText = {
+        'red': '🔴 빨간색 켜짐',
+        'green': '🟢 초록색 켜짐',
+        'blue': '🔵 파란색 켜짐',
+        'off': '꺼짐'
+      };
 
-  try {
-    // 백엔드 컨트롤러(/api/arduino/rgb)로 POST 요청 전송
-    const response = await fetch('http://localhost:8080/api/arduino/rgb', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ color: command })
-    });
+      document.getElementById('led-status').innerText = ledStatusText[color] || '꺼짐';
 
-    if (response.ok) {
-      status.innerText = colorMap[color];
-      unlockSurvey('led'); // 설문지 잠금 해제
-    } else {
-      const errData = await response.json();
-      alert('LED 제어 실패: ' + (errData.message || '서버 오류'));
-    }
-  } catch (error) {
-    console.error('LED 통신 에러:', error);
-    alert('백엔드 서버(localhost:8080) 연결 실패! Spring Boot가 켜져 있는지 확인해 주세요.');
-  }
-}
+      if (!isArduinoConnected) return;
 
-    /* ====================================================
-       📊 개별 설문 잠금해제 및 제출
-    ==================================================== */
-    function unlockSurvey(type) {
-      const lockedEl = document.getElementById(`survey-${type}-locked`);
-      const unlockedEl = document.getElementById(`survey-${type}-unlocked`);
-      if (lockedEl && unlockedEl) {
-        lockedEl.classList.add('hidden');
-        unlockedEl.classList.remove('hidden');
+      try {
+        await fetch('http://localhost:8080/api/arduino/led', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ color })
+        });
+      } catch (err) {
+        console.error('LED 통신 실패:', err);
       }
     }
 
-    function submitIndividualSurvey(event, type) {
+    /* ====================================================
+       📊 개별 설문 제어
+    ==================================================== */
+    function unlockSurvey(type) {
+      const lockedElem = document.getElementById(`survey-${type}-locked`);
+      const unlockedElem = document.getElementById(`survey-${type}-unlocked`);
+
+      if (lockedElem && unlockedElem) {
+        lockedElem.classList.add('hidden');
+        unlockedElem.classList.remove('hidden');
+      }
+    }
+
+    async function submitIndividualSurvey(event, type) {
       event.preventDefault();
-      const unlockedEl = document.getElementById(`survey-${type}-unlocked`);
-      const completedEl = document.getElementById(`survey-${type}-completed`);
-      if (unlockedEl && completedEl) {
-        unlockedEl.classList.add('hidden');
-        completedEl.classList.remove('hidden');
+
+      const unlockedElem = document.getElementById(`survey-${type}-unlocked`);
+      const completedElem = document.getElementById(`survey-${type}-completed`);
+
+      if (unlockedElem && completedElem) {
+        unlockedElem.classList.add('hidden');
+        completedElem.classList.remove('hidden');
       }
     }
 
@@ -632,5 +716,7 @@
       }
     }
 </script>
+
+
 </body>
 </html>

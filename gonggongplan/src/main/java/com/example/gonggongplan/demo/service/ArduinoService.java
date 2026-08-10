@@ -12,13 +12,11 @@ import jakarta.annotation.PreDestroy;
 public class ArduinoService {
 
     private SerialPort comPort;
-    private double latestTemperature = 24.0; // 기본값
-    private double latestHumidity = 50.0;    // 기본값
+    private int latestReactionTime = 0; // 최근 측정된 반응 속도 저장
 
     @PostConstruct
     public void init() {
         SerialPort[] ports = SerialPort.getCommPorts();
-
         for (SerialPort p : ports) {
             String name = p.getSystemPortName();
             if (name.contains("usbmodem") || name.contains("usbserial") || name.contains("COM")) {
@@ -28,11 +26,9 @@ public class ArduinoService {
         }
 
         if (comPort != null) {
-            comPort.setBaudRate(9600);
+            comPort.setBaudRate(9600); // 아두이노와 통신 속도 일치
             if (comPort.openPort()) {
-                System.out.println("🔌 [아두이노 연결 성공] 포트명: " + comPort.getSystemPortName());
-
-                // 시리얼 수신 이벤트 리스너 등록
+                System.out.println("🔌 [아두이노 연결 성공] 포트: " + comPort.getSystemPortName());
                 setupSerialListener();
             }
         }
@@ -54,7 +50,7 @@ public class ArduinoService {
 
                 for (byte b : newData) {
                     if (b == '\n') {
-                        parseDhtData(buffer.toString().trim());
+                        parseSerialData(buffer.toString().trim());
                         buffer.setLength(0);
                     } else if (b != '\r') {
                         buffer.append((char) b);
@@ -64,31 +60,27 @@ public class ArduinoService {
         });
     }
 
-    private void parseDhtData(String line) {
-        // 데이터 형식: "DHT:24.5,50.0"
-        if (line.startsWith("DHT:")) {
+    private void parseSerialData(String line) {
+        // "REACT:350" 형태로 들어오면 숫자만 추출
+        if (line.startsWith("REACT:")) {
             try {
-                String[] parts = line.substring(4).split(",");
-                if (parts.length == 2) {
-                    this.latestTemperature = Double.parseDouble(parts[0]);
-                    this.latestHumidity = Double.parseDouble(parts[1]);
-                    System.out.println("🌡️ [온습도 수신] 온도: " + latestTemperature + "°C / 습도: " + latestHumidity + "%");
-                }
-            } catch (Exception ignored) {}
+                this.latestReactionTime = Integer.parseInt(line.substring(6).trim());
+                System.out.println("⏱️ [반응속도 측정됨]: " + latestReactionTime + "ms");
+            } catch (Exception e) {
+                System.out.println("데이터 파싱 오류: " + line);
+            }
         }
     }
 
-    public boolean sendCommand(String command) {
-        if (comPort != null && comPort.isOpen()) {
-            byte[] bytes = command.getBytes();
-            comPort.writeBytes(bytes, bytes.length);
-            return true;
-        }
-        return false;
+    // 컨트롤러에서 호출하여 값을 가져감
+    public int getReactionTime() {
+        return latestReactionTime;
     }
 
-    public double getLatestTemperature() { return latestTemperature; }
-    public double getLatestHumidity() { return latestHumidity; }
+    // 웹에서 값을 읽어간 후에는 0으로 초기화 (중복 읽기 방지)
+    public void clearReactionTime() {
+        this.latestReactionTime = 0;
+    }
 
     @PreDestroy
     public void close() {

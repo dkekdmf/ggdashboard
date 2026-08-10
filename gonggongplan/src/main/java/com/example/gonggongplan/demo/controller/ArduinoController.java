@@ -1,46 +1,27 @@
 package com.example.gonggongplan.demo.controller;
 
-import com.example.gonggongplan.demo.service.ArduinoService;
+import com.example.gonggongplan.demo.service.ArduinoReactionService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/arduino")
-@CrossOrigin(origins = "*")
+@RequiredArgsConstructor
 public class ArduinoController {
 
-    private final ArduinoService arduinoService;
+    private final ArduinoReactionService arduinoService;
 
-    public ArduinoController(ArduinoService arduinoService) {
-        this.arduinoService = arduinoService;
-    }
-
-    // 1. RGB LED 색상 제어 API
-    @PostMapping("/rgb")
-    public ResponseEntity<Map<String, Object>> controlRgb(@RequestBody Map<String, String> request) {
-        String color = request.get("color");
-
-        if (color == null || color.isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "색상 명령이 없습니다."));
-        }
-
-        boolean success = arduinoService.sendCommand(color);
-
-        if (success) {
-            return ResponseEntity.ok(Map.of("status", "success", "color", color));
-        } else {
-            return ResponseEntity.badRequest().body(Map.of("status", "error", "message", "아두이노 연결 실패"));
-        }
-    }
-
-    // 2. 온습도 데이터 조회 API (👉 추가됨!)
-    @GetMapping("/dht")
-    public ResponseEntity<Map<String, Object>> getDhtData() {
-        return ResponseEntity.ok(Map.of(
-                "temperature", arduinoService.getLatestTemperature(),
-                "humidity", arduinoService.getLatestHumidity()
-        ));
+    /**
+     * 프론트엔드에서 0.5초(또는 1초)마다 호출하는 반응속도 게임 상태 API
+     * 반환값 예시: {"state": "READY", "message": "초록불을 보세요!", "time": 0}
+     *            {"state": "RESULT", "message": "번개같은 반응속도!", "time": 240}
+     */
+    @GetMapping("/reaction")
+    public ResponseEntity<ArduinoReactionService.ReactionDataDto> getReactionData() {
+        ArduinoReactionService.ReactionDataDto currentState = arduinoService.getCurrentState();
+        return ResponseEntity.ok(currentState);
     }
 }
