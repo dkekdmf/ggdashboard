@@ -33,6 +33,19 @@ public class ArduinoService {
             }
         }
     }
+    // 1. 현재 아두이노가 연결(Open)되어 있는지 확인하는 메서드
+    public boolean isConnected() {
+        // serialPort 객체가 존재하고, 실제로 열려(isOpen)있다면 true 반환
+        return this.comPort != null && this.comPort.isOpen();
+    }
+
+    // 2. 현재 연결된 포트의 이름을 반환하는 메서드 (예: COM3, /dev/cu.usbmodem)
+    public String getPortName() {
+        if (this.comPort != null) {
+            return this.comPort.getSystemPortName();
+        }
+        return "Unknown";
+    }
 
     private void setupSerialListener() {
         comPort.addDataListener(new SerialPortDataListener() {
@@ -59,6 +72,7 @@ public class ArduinoService {
             }
         });
     }
+
 
     private void parseSerialData(String line) {
         // "REACT:350" 형태로 들어오면 숫자만 추출

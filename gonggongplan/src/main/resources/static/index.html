@@ -78,6 +78,69 @@
         </form>
     </div>
 </div>
+<!-- 🤖 [활동 5] 스마트홈 조건문(If-Then) 코딩 체험 -->
+<div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
+    <div class="flex justify-between items-center mb-4">
+        <div>
+            <span class="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full">스마트홈 IoT</span>
+            <h3 class="text-xl font-bold text-slate-800 mt-2">🤖 AI & 센서 조건문 코딩</h3>
+        </div>
+        <span class="text-3xl">🏠</span>
+    </div>
+
+    <!-- 조건문(If - Then) 설정 블록 -->
+    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center gap-3">
+
+        <!-- IF 조건 (만약 ~라면) -->
+        <div class="flex-1 w-full bg-indigo-50 border border-indigo-200 p-3 rounded-xl">
+            <span class="text-xs font-black text-indigo-600 block mb-1">IF (만약 ~라면)</span>
+            <div class="flex gap-2">
+                <select id="rule-sensor" onchange="updateRuleOptions()" class="w-1/2 p-2 rounded-lg border border-indigo-200 text-sm font-bold text-slate-700 bg-white">
+                    <option value="TEMP">🌡️ 온도 센서가</option>
+                    <option value="HUMI">💧 습도 센서가</option>
+                    <option value="AI">📸 AI 카메라에</option>
+                </select>
+                <select id="rule-condition" class="w-1/2 p-2 rounded-lg border border-indigo-200 text-sm font-bold text-slate-700 bg-white">
+                    <!-- JS에서 동적으로 채워짐 -->
+                </select>
+            </div>
+        </div>
+
+        <div class="text-indigo-400 font-extrabold text-xl">➔</div>
+
+        <!-- THEN 동작 (이렇게 해라!) -->
+        <div class="flex-1 w-full bg-emerald-50 border border-emerald-200 p-3 rounded-xl">
+            <span class="text-xs font-black text-emerald-600 block mb-1">THEN (이렇게 실행!)</span>
+            <div class="flex gap-2">
+                <select id="rule-actuator" class="w-1/2 p-2 rounded-lg border border-emerald-200 text-sm font-bold text-slate-700 bg-white">
+                    <option value="RGB">💡 RGB 무드등을</option>
+                </select>
+                <select id="rule-action" class="w-1/2 p-2 rounded-lg border border-emerald-200 text-sm font-bold text-slate-700 bg-white">
+                    <option value="RED">🔴 빨간색 켜기</option>
+                    <option value="GREEN">🟢 초록색 켜기</option>
+                    <option value="BLUE">🔵 파란색 켜기</option>
+                    <option value="OFF">⚪ 끄기</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 규칙 적용 / 스위치 -->
+        <button id="rule-toggle-btn" onclick="toggleSmartRule()" class="w-full md:w-auto px-6 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition shadow-md active:scale-95 whitespace-nowrap">
+            ▶️ 규칙 작동 시작
+        </button>
+    </div>
+
+    <!-- 실시간 스마트홈 작동 실행 로그 -->
+    <div class="mt-4 p-3 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl flex items-center justify-between">
+        <span id="smart-log">System: 규칙 작동 대기 중...</span>
+        <span id="smart-status-badge" class="px-2 py-0.5 rounded text-[10px] bg-slate-700 text-slate-300">OFF</span>
+    </div>
+
+    <!-- 💡 AI 카메라 규칙 사용 안내 -->
+    <p class="mt-2 text-[11px] text-slate-400 text-center">
+        💡 IF 조건에서 <b>"AI 카메라"</b>를 선택했다면, <b>[1. AI 사물 감지 스캐너]</b> 카드를 눌러 카메라를 켜주세요. 카메라가 켜져 있는 동안 실시간으로 사람을 감지해서 규칙을 실행합니다.
+    </p>
+</div>
 
 <!-- 메인 대시보드 컨테이너 -->
 <div class="max-w-6xl mx-auto space-y-6">
@@ -466,7 +529,7 @@
     }
     /* ====================================================
    ⚡ 통합 아두이노 반응속도 게임 실시간 조회 (0.5초 주기)
-==================================================== */
+       ==================================================== */
 async function fetchReactionData() {
     try {
         const response = await fetch('/api/arduino/reaction');
@@ -537,28 +600,208 @@ async function fetchReactionData() {
 // 0.5초(500ms)마다 아두이노 반응속도 상태 업데이트
 setInterval(fetchReactionData, 500);
 
-    /* ====================================================
-       🔌 아두이노 연결 및 통신
-    ==================================================== */
-    let isArduinoConnected = false;
+/* ====================================================
+   🤖 스마트홈 If-Then 조건문 자동화 엔진
+==================================================== */
+let isRuleActive = false;
+let lastExecutedAction = ""; // 중복 명령 전송 방지용
+function updateRuleOptions() {
+    const sensor = document.getElementById('rule-sensor').value;
+    const conditionSelect = document.getElementById('rule-condition');
+    conditionSelect.innerHTML = '';
 
-    function toggleArduino() {
-      isArduinoConnected = !isArduinoConnected;
-      const dot = document.getElementById('arduino-dot');
-      const text = document.getElementById('arduino-text');
-      const btn = document.getElementById('arduino-btn');
-
-      if (isArduinoConnected) {
-        dot.className = "w-3.5 h-3.5 rounded-full bg-emerald-500 animate-ping";
-        text.innerText = "🟢 아두이노 연결됨 (포트: COM3)";
-        btn.className = "flex items-center gap-3 px-5 py-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold transition";
-        unlockSurvey('sensor'); // 아두이노 연결 성공 시 온·습도 설문 자동 열기
-      } else {
-        dot.className = "w-3.5 h-3.5 rounded-full bg-rose-500 animate-pulse";
-        text.innerText = "🔌 아두이노 연결하기 (미연결)";
-        btn.className = "flex items-center gap-3 px-5 py-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 font-bold transition";
-      }
+    let options = [];
+    if (sensor === 'TEMP') {
+        options = [
+            { val: 'TEMP_ABOVE_20', text: '🔥 20°C 이상일 때' },
+            { val: 'TEMP_LOW_18', text: '❄️ 18°C 이하일 때' }
+        ];
+    } else if (sensor === 'HUMI') {
+        options = [
+            { val: 'HUMI_BELOW_60', text: '🌵 60% 미만(아래)일 때' },
+            { val: 'HUMI_HIGH_70', text: '🌧️ 70% 이상일 때' }
+        ];
+    } else if (sensor === 'AI') {
+        options = [
+            { val: 'PERSON', text: '👤 사람 감지 시' },
+            { val: 'CUP', text: '☕ 컵 감지 시' },
+            { val: 'CELL_PHONE', text: '📱 스마트폰 감지 시' }
+        ];
     }
+
+    options.forEach(opt => {
+        const el = document.createElement('option');
+        el.value = opt.val;
+        el.innerText = opt.text;
+        conditionSelect.appendChild(el);
+    });
+}
+// 초기 실행
+updateRuleOptions();
+
+// 2. 규칙 ON / OFF 토글
+function toggleSmartRule() {
+    const btn = document.getElementById('rule-toggle-btn');
+    const badge = document.getElementById('smart-status-badge');
+    const log = document.getElementById('smart-log');
+
+    isRuleActive = !isRuleActive;
+
+    if (isRuleActive) {
+        btn.innerText = "⏹️ 규칙 일시정지";
+        btn.className = "w-full md:w-auto px-6 py-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold transition shadow-md active:scale-95 whitespace-nowrap";
+        badge.innerText = "RUNNING";
+        badge.className = "px-2 py-0.5 rounded text-[10px] bg-emerald-500 text-white animate-pulse";
+        log.innerText = "System: 실시간 감지 작동 중...";
+    } else {
+        btn.innerText = "▶️ 규칙 작동 시작";
+        btn.className = "w-full md:w-auto px-6 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition shadow-md active:scale-95 whitespace-nowrap";
+        badge.innerText = "OFF";
+        badge.className = "px-2 py-0.5 rounded text-[10px] bg-slate-700 text-slate-300";
+        log.innerText = "System: 규칙 작동이 정지되었습니다.";
+        lastExecutedAction = "";
+    }
+}
+
+// 3. 주기적으로 실행되는 조건문 평가 함수 (기존 센서/AI 루프에서 호출)
+function evaluateSmartHomeRule(currentTemp, currentHumi, aiDetectedObjects = []) {
+    if (!isRuleActive) return;
+
+    const sensor = document.getElementById('rule-sensor').value;
+    const condition = document.getElementById('rule-condition').value;
+    const action = document.getElementById('rule-action').value;
+
+    let isConditionMet = false;
+
+    // A. 온도 조건 평가
+    if (sensor === 'TEMP') {
+        if (condition === 'TEMP_GT_28' && currentTemp >= 28) isConditionMet = true;
+        if (condition === 'TEMP_GT_30' && currentTemp >= 30) isConditionMet = true;
+        if (condition === 'TEMP_LT_20' && currentTemp <= 20) isConditionMet = true;
+    }
+    // B. 습도 조건 평가
+    else if (sensor === 'HUMI') {
+        if (condition === 'HUMI_GT_70' && currentHumi >= 70) isConditionMet = true;
+        if (condition === 'HUMI_LT_40' && currentHumi <= 40) isConditionMet = true;
+    }
+    // C. AI 카메라 조건 평가
+    else if (sensor === 'AI') {
+        const targetClass = condition.replace('AI_', '');
+        if (aiDetectedObjects.includes(targetClass)) isConditionMet = true;
+    }
+
+    // 조건이 맞고, 이전 동작과 다를 때만 아두이노로 명령 전송 (중복 방지)
+    if (isConditionMet) {
+        if (lastExecutedAction !== action) {
+            lastExecutedAction = action;
+            triggerArduinoActuator(action);
+            document.getElementById('smart-log').innerText = `⚡ [조건 성립!] ➔ 무드등 [${action}] 실행`;
+        }
+    } else {
+        // 조건이 안 맞을 때 기본 상태(끄기)로 원복하고 싶다면 아래 주석 해제
+        /*
+        if (lastExecutedAction !== 'OFF') {
+            lastExecutedAction = 'OFF';
+            triggerArduinoActuator('OFF');
+            document.getElementById('smart-log').innerText = `System: 조건 미성립 ➔ 무드등 끄기`;
+        }
+        */
+    }
+}
+
+// 4. 백엔드로 아두이노 제어 요청 보내기
+async function triggerArduinoActuator(actionCommand) {
+    try {
+        await fetch('/api/arduino/control', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: actionCommand })
+        });
+    } catch (e) {
+        console.error("아두이노 제어 실패:", e);
+    }
+}
+/* ====================================================
+   🔌 아두이노 실시간 연결 상태 자동 감지
+==================================================== */
+async function checkArduinoConnection() {
+    try {
+        const response = await fetch('/api/arduino/status');
+        if (!response.ok) {
+            updateArduinoHeaderUI(false);
+            return;
+        }
+
+        const data = await response.json();
+        // 백엔드 응답 예시: { "connected": true, "portName": "/dev/cu.usbmodem1101" }
+
+        updateArduinoHeaderUI(data.connected, data.portName);
+
+    } catch (error) {
+        // 백엔드 서버가 꺼져있거나 통신 실패 시 미연결 처리
+        updateArduinoHeaderUI(false);
+    }
+}
+// 백엔드/아두이노로부터 온·습도 데이터를 받아올 때 호출되는 함수
+function handleSensorData(temp, humi) {
+    // 1. 화면의 센서 값 업데이트
+    document.getElementById('temp-val').innerText = `${temp} °C`;
+    document.getElementById('hum-val').innerText = `${humi} %`;
+
+    // 2. '▶️ 규칙 작동 시작' 상태가 아니면 실행하지 않고 종료
+    if (!isRuleRunning) return;
+
+    const sensor = document.getElementById('rule-sensor').value;       // "TEMP" 또는 "HUMI"
+    const condition = document.getElementById('rule-condition').value; // "TEMP_ABOVE_20" 또는 "HUMI_BELOW_60"
+    const action = document.getElementById('rule-action').value;       // "RED", "GREEN", "BLUE", "OFF"
+
+    let isTriggered = false;
+
+    // [온도 조건 확인] 20도 이상
+    if (sensor === 'TEMP' && condition === 'TEMP_ABOVE_20') {
+        if (temp >= 20) isTriggered = true;
+    }
+    // [습도 조건 확인] 60% 미만(아래)
+    else if (sensor === 'HUMI' && condition === 'HUMI_BELOW_60') {
+        if (humi < 60) isTriggered = true;
+    }
+
+    // 3. 조건이 맞으면 LED 색상 변경 및 로그 출력
+    if (isTriggered) {
+        changeLed(action);
+        const sensorText = sensor === 'TEMP' ? `온도(${temp}°C)` : `습도(${humi}%)`;
+        document.getElementById('smart-log').innerText =
+            `System: [조건 충족] ${sensorText} ➔ 무드등 [${action}] 제어 명령 전송!`;
+    }
+}
+// 상단 헤더 버튼 UI 업데이트 함수
+function updateArduinoHeaderUI(isConnected, portName = '') {
+    const dot = document.getElementById('arduino-dot');
+    const text = document.getElementById('arduino-text');
+    const btn = document.getElementById('arduino-btn');
+
+    if (!dot || !text || !btn) return;
+
+    if (isConnected) {
+        // 🟢 연결되었을 때 (초록색 테마)
+        dot.className = "w-3.5 h-3.5 rounded-full bg-emerald-500 animate-ping";
+        text.innerText = `🟢 아두이노 연결됨 ${portName ? '(' + portName + ')' : ''}`;
+        btn.className = "flex items-center gap-3 px-5 py-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold transition";
+
+        // 연결 성공 시 온·습도 평가 설문 자동 잠금 해제
+        unlockSurvey('sensor');
+    } else {
+        // 🔴 미연결 상태일 때 (빨간색 테마)
+        dot.className = "w-3.5 h-3.5 rounded-full bg-rose-500 animate-pulse";
+        text.innerText = "🔌 아두이노 미연결";
+        btn.className = "flex items-center gap-3 px-5 py-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 font-bold transition hover:bg-rose-100 active:scale-95";
+    }
+}
+
+// 페이지 로드 후 2초마다 아두이노 연결 상태 주기적 체크
+setInterval(checkArduinoConnection, 2000);
+// 페이지 처음 들어왔을 때 즉시 1회 체크
+checkArduinoConnection();
 
     async function fetchDhtData() {
       if (!isArduinoConnected) return;
@@ -584,30 +827,23 @@ setInterval(fetchReactionData, 500);
     }
     setInterval(fetchDhtData, 2000);
 
-    async function changeLed(color) {
-      unlockSurvey('led'); // LED 버튼 클릭 시 무드등 설문 자동 열기
+  async function changeLed(color) {
+    console.log(`📡 [1. 프론트엔드] changeLed() 호출됨 | 요청 색상: ${color}`);
 
-      const ledStatusText = {
-        'red': '🔴 빨간색 켜짐',
-        'green': '🟢 초록색 켜짐',
-        'blue': '🔵 파란색 켜짐',
-        'off': '꺼짐'
-      };
+    document.getElementById('led-status').innerText = color;
 
-      document.getElementById('led-status').innerText = ledStatusText[color] || '꺼짐';
-
-      if (!isArduinoConnected) return;
-
-      try {
-        await fetch('http://localhost:8080/api/arduino/led', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ color })
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/arduino/led`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ color })
         });
-      } catch (err) {
-        console.error('LED 통신 실패:', err);
-      }
+
+        console.log(`🟢 [1. 프론트엔드] 서버 응답 완료 | 상태 코드: ${response.status}`);
+    } catch (e) {
+        console.error("🔴 [1. 프론트엔드] 백엔드 서버 통신 에러 발생:", e);
     }
+}
 
     /* ====================================================
        📊 개별 설문 제어
@@ -642,12 +878,25 @@ setInterval(fetchReactionData, 500);
     const detectedLabel = document.getElementById('detectedLabel');
 
     let mediaStream = null;
-    let scanInterval = null;
+    let scanInterval = null;      // 실시간 사람/사물 감지용 인터벌
     let isAnalyzing = false;
+    let cocoModel = null;         // 브라우저에서 바로 도는 실시간 감지 모델 (coco-ssd)
+    let personPreviouslyDetected = false; // 사람이 "새로" 나타났을 때만 반응시키기 위한 상태값
+
+    /* 🤖 페이지가 열리자마자 실시간 감지 모델을 미리 불러둔다 (카메라를 켜는 순간 바로 쓰기 위함) */
+    async function loadCocoModel() {
+      try {
+        cocoModel = await cocoSsd.load();
+        console.log("✅ 실시간 사람 감지 모델(coco-ssd) 로드 완료");
+      } catch (e) {
+        console.error("❌ 실시간 감지 모델 로드 실패:", e);
+      }
+    }
+    loadCocoModel();
 
     function openScannerModal() {
       document.getElementById('scanner-modal').classList.remove('hidden');
-      aiStatusText.innerText = "✨ [사진 찍기] 버튼을 누르면 AI가 사물을 분석합니다!";
+      aiStatusText.innerText = "✨ 카메라를 켜는 중입니다...";
 
       navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "environment" }
@@ -656,6 +905,8 @@ setInterval(fetchReactionData, 500);
         mediaStream = stream;
         video.srcObject = stream;
         video.play();
+        aiStatusText.innerText = "✨ [사진 찍기]로 직접 분석하거나, 카메라에 사람이 잡히면 자동으로 감지돼요!";
+        startLivePersonWatch(); // 🔴 카메라가 켜진 동안 실시간으로 사람을 계속 감지
       })
       .catch(err => {
         console.error("카메라 접근 에러:", err);
@@ -669,12 +920,74 @@ setInterval(fetchReactionData, 500);
         mediaStream.getTracks().forEach(track => track.stop());
         mediaStream = null;
       }
+      stopLivePersonWatch();
+      document.getElementById('scanner-modal').classList.add('hidden');
+      unlockSurvey('scanner');
+    }
+
+    /* ====================================================
+       👤 실시간 사람 감지 → 스마트홈 규칙 엔진(RGB LED) 연동
+       - 카메라가 켜져 있는 동안 0.7초마다 화면을 분석한다.
+       - "스마트홈 IoT" 카드에서 IF(AI 카메라-사람 감지) → THEN(RGB 색상) 규칙을
+         켜둔 상태라면, 사람이 감지될 때 자동으로 무드등 색이 바뀐다.
+    ==================================================== */
+    function startLivePersonWatch() {
+      if (scanInterval) return; // 이미 실행 중이면 중복 실행 방지
+      personPreviouslyDetected = false;
+
+      scanInterval = setInterval(async () => {
+        if (!cocoModel || !video.videoWidth) return; // 모델/영상 준비 전이면 대기
+
+        try {
+          const predictions = await cocoModel.detect(video);
+          handleLiveDetection(predictions);
+        } catch (e) {
+          console.warn("실시간 감지 중 오류:", e);
+        }
+      }, 700);
+    }
+
+    function stopLivePersonWatch() {
       if (scanInterval) {
         clearInterval(scanInterval);
         scanInterval = null;
       }
-      document.getElementById('scanner-modal').classList.add('hidden');
-      unlockSurvey('scanner');
+      personPreviouslyDetected = false;
+    }
+
+    // coco-ssd 클래스명 → 스마트홈 규칙(IF 조건)에서 쓰는 코드로 변환
+    const AI_CLASS_MAP = { person: 'PERSON', cup: 'CUP', 'cell phone': 'CELL_PHONE' };
+
+    function handleLiveDetection(predictions) {
+      const confident = predictions.filter(p => p.score > 0.6); // 신뢰도 60% 이상만 채택
+      const detectedCodes = confident.map(p => AI_CLASS_MAP[p.class]).filter(Boolean);
+      const personDetected = detectedCodes.includes('PERSON');
+
+      // 1. 화면 위 실시간 감지 라벨 오버레이 업데이트
+      if (confident.length > 0) {
+        const top = confident.reduce((a, b) => (a.score > b.score ? a : b));
+        const label = top.class === 'person' ? '사람' : top.class;
+        detectedLabel.innerText = `🔍 ${label} 감지됨 (${Math.round(top.score * 100)}%)`;
+        detectedLabel.classList.remove('opacity-0', 'translate-y-2');
+        detectedLabel.classList.add('opacity-100', 'translate-y-0');
+      } else {
+        detectedLabel.classList.add('opacity-0', 'translate-y-2');
+        detectedLabel.classList.remove('opacity-100', 'translate-y-0');
+      }
+
+      // 2. 스마트홈 IF-THEN 규칙 엔진으로 실시간 감지 결과 전달
+      //    (rule-toggle-btn으로 규칙이 켜져 있을 때만 실제로 LED가 바뀐다)
+      const currentTemp = parseFloat(document.getElementById('temp-val').innerText) || 0;
+      const currentHumi = parseFloat(document.getElementById('hum-val').innerText) || 0;
+      evaluateSmartHomeRule(currentTemp, currentHumi, detectedCodes);
+
+      // 3. 사람이 "새로" 감지되거나 사라졌을 때만 상태 메시지 갱신 (중복 로그 방지)
+      if (personDetected && !personPreviouslyDetected) {
+        aiStatusText.innerText = "🙋 사람이 감지되었습니다!";
+      } else if (!personDetected && personPreviouslyDetected) {
+        aiStatusText.innerText = "✨ 계속 감지 중... (카메라에 사람이 없어요)";
+      }
+      personPreviouslyDetected = personDetected;
     }
 
     async function captureAndDetect() {
