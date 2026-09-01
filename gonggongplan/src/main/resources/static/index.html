@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>아두이노 & AI 사물인식 대시보드</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- 🤖 TensorFlow.js & COCO-SSD 사물 감지 AI 라이브러리 추가 -->
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+
+    <style>
+        @keyframes pulse-slow {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        .pulse-animation { animation: pulse-slow 2s infinite; }
+    </style>
+</head>
+<body class="bg-slate-100 min-h-screen p-4 md:p-8 font-sans">
+
+<!-- 0. 로그인 / 학생 정보 입력 화면 -->
+<div id="login-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl border border-slate-100 space-y-6">
+        <div class="text-center space-y-2">
+            <span class="text-5xl block mb-2">🏫</span>
+            <h2 class="text-2xl font-black text-slate-800">탐구 대시보드 로그인</h2>
+            <p class="text-xs text-slate-400">오늘의 수업 활동을 시작하기 위해 아래 정보를 선택해 주세요.</p>
+        </div>
+
+        <form onsubmit="handleLogin(event)" class="space-y-5">
+            <!-- 1. 초등학교 이름 입력 -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                    <span>🏫</span> 초등학교 이름
+                </label>
+                <input type="text" id="input-school" value="서울초등학교" placeholder="예: 서울초등학교" required
+                       class="w-full p-3.5 rounded-2xl border border-slate-200 bg-slate-50 text-sm font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition" />
+            </div>
+
+            <!-- 2. 학년 선택 다이얼로그 -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                    <span>🎒</span> 학년 선택
+                </label>
+                <div class="grid grid-cols-3 gap-2" id="grade-grid">
+                    <button type="button" onclick="selectGrade('1학년')" class="grade-btn py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-600 hover:bg-slate-100 transition">1학년</button>
+                    <button type="button" onclick="selectGrade('2학년')" class="grade-btn py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-600 hover:bg-slate-100 transition">2학년</button>
+                    <button type="button" onclick="selectGrade('3학년')" class="grade-btn py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-600 hover:bg-slate-100 transition">3학년</button>
+                    <button type="button" onclick="selectGrade('4학년')" class="grade-btn py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-600 hover:bg-slate-100 transition">4학년</button>
+                    <button type="button" onclick="selectGrade('5학년')" class="grade-btn py-2.5 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white text-xs font-extrabold shadow-md transition">5학년</button>
+                    <button type="button" onclick="selectGrade('6학년')" class="grade-btn py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-600 hover:bg-slate-100 transition">6학년</button>
+                </div>
+                <input type="hidden" id="input-grade" value="5학년" />
+            </div>
+
+            <!-- 3. 성별 선택 다이얼로그 -->
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1.5 flex items-center gap-1">
+                    <span>👤</span> 성별 선택
+                </label>
+                <div class="grid grid-cols-2 gap-3" id="gender-grid">
+                    <button type="button" onclick="selectGender('남학생')" class="gender-btn py-3.5 px-4 rounded-2xl border-2 border-indigo-600 bg-indigo-50/70 text-indigo-700 text-sm font-black flex items-center justify-center gap-2 shadow-sm transition active:scale-95">
+                        <span class="text-lg">👦</span> 남학생
+                    </button>
+                    <button type="button" onclick="selectGender('여학생')" class="gender-btn py-3.5 px-4 rounded-2xl border border-slate-200 bg-slate-50 text-slate-600 text-sm font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition active:scale-95">
+                        <span class="text-lg">👧</span> 여학생
+                    </button>
+                </div>
+                <input type="hidden" id="input-gender" value="남학생" />
+            </div>
+
+            <button type="submit" class="w-full py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-xl transition active:scale-95 text-base mt-3 flex items-center justify-center gap-2">
+                🚀 대시보드 입장하기
+            </button>
+        </form>
+    </div>
+</div>
+<!-- 🤖 [활동 5] 스마트홈 조건문(If-Then) 코딩 체험 -->
+<div class="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
+    <div class="flex justify-between items-center mb-4">
+        <div>
+            <span class="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full">스마트홈 IoT</span>
+            <h3 class="text-xl font-bold text-slate-800 mt-2">🤖 AI & 센서 조건문 코딩</h3>
+        </div>
+        <span class="text-3xl">🏠</span>
+    </div>
+
+    <!-- 조건문(If - Then) 설정 블록 -->
+    <div class="bg-slate-50 p-5 rounded-2xl border border-slate-200 flex flex-col md:flex-row items-center gap-3">
+
+        <!-- IF 조건 (만약 ~라면) -->
+        <div class="flex-1 w-full bg-indigo-50 border border-indigo-200 p-3 rounded-xl">
+            <span class="text-xs font-black text-indigo-600 block mb-1">IF (만약 ~라면)</span>
+            <div class="flex gap-2">
+                <select id="rule-sensor" onchange="updateRuleOptions()" class="w-1/2 p-2 rounded-lg border border-indigo-200 text-sm font-bold text-slate-700 bg-white">
+                    <option value="TEMP">🌡️ 온도 센서가</option>
+                    <option value="HUMI">💧 습도 센서가</option>
+                    <option value="AI">📸 AI 카메라에</option>
+                </select>
+                <select id="rule-condition" class="w-1/2 p-2 rounded-lg border border-indigo-200 text-sm font-bold text-slate-700 bg-white">
+                    <!-- JS에서 동적으로 채워짐 -->
+                </select>
+            </div>
+        </div>
+
+        <div class="text-indigo-400 font-extrabold text-xl">➔</div>
+
+        <!-- THEN 동작 (이렇게 해라!) -->
+        <div class="flex-1 w-full bg-emerald-50 border border-emerald-200 p-3 rounded-xl">
+            <span class="text-xs font-black text-emerald-600 block mb-1">THEN (이렇게 실행!)</span>
+            <div class="flex gap-2">
+                <select id="rule-actuator" class="w-1/2 p-2 rounded-lg border border-emerald-200 text-sm font-bold text-slate-700 bg-white">
+                    <option value="RGB">💡 RGB 무드등을</option>
+                </select>
+                <select id="rule-action" class="w-1/2 p-2 rounded-lg border border-emerald-200 text-sm font-bold text-slate-700 bg-white">
+                    <option value="RED">🔴 빨간색 켜기</option>
+                    <option value="GREEN">🟢 초록색 켜기</option>
+                    <option value="BLUE">🔵 파란색 켜기</option>
+                    <option value="OFF">⚪ 끄기</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 규칙 적용 / 스위치 -->
+        <button id="rule-toggle-btn" onclick="toggleSmartRule()" class="w-full md:w-auto px-6 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition shadow-md active:scale-95 whitespace-nowrap">
+            ▶️ 규칙 작동 시작
+        </button>
+    </div>
+
+    <!-- 실시간 스마트홈 작동 실행 로그 -->
+    <div class="mt-4 p-3 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl flex items-center justify-between">
+        <span id="smart-log">System: 규칙 작동 대기 중...</span>
+        <span id="smart-status-badge" class="px-2 py-0.5 rounded text-[10px] bg-slate-700 text-slate-300">OFF</span>
+    </div>
+
+    <!-- 💡 AI 카메라 규칙 사용 안내 -->
+    <p class="mt-2 text-[11px] text-slate-400 text-center">
+        💡 IF 조건에서 <b>"AI 카메라"</b>를 선택했다면, <b>[1. AI 사물 감지 스캐너]</b> 카드를 눌러 카메라를 켜주세요. 카메라가 켜져 있는 동안 실시간으로 사람을 감지해서 규칙을 실행합니다.
+    </p>
+</div>
+
+<!-- 메인 대시보드 컨테이너 -->
+<div class="max-w-6xl mx-auto space-y-6">
+
+    <!-- 헤더 영역 -->
+    <header class="flex justify-between items-center mb-8">
+        <div class="flex items-center gap-3">
+            <span class="text-4xl">🏫</span>
+            <div>
+                <div class="flex items-center gap-2">
+                    <span id="display-school-grade" class="text-xs font-bold text-indigo-600 tracking-wide uppercase">서울초등학교 5학년</span>
+                    <span id="display-gender" class="text-xs font-bold text-indigo-400 bg-indigo-50 px-2 py-0.5 rounded-full">남학생</span>
+                </div>
+                <h1 class="text-2xl font-extrabold text-slate-800">공공 대시보드</h1>
+            </div>
+        </div>
+
+        <button id="arduino-btn" onclick="toggleArduino()" class="flex items-center gap-3 px-5 py-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 font-bold transition hover:bg-rose-100 active:scale-95">
+            <span id="arduino-dot" class="w-3.5 h-3.5 rounded-full bg-rose-500 animate-pulse"></span>
+            <span id="arduino-text">🔌 아두이노 연결하기 (미연결)</span>
+        </button>
+    </header>
+
+    <!-- 오늘의 미션 배너 -->
+    <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-3xl p-6 text-white shadow-md flex items-center justify-between">
+        <div class="space-y-1">
+            <span class="bg-white/20 text-xs font-bold px-3 py-1 rounded-full backdrop-blur-md">TODAY'S MISSION</span>
+            <h2 class="text-xl md:text-2xl font-black">🤖 미션: AI 카메라로 주변 사물을 비춰보고 텍스트로 확인해 보세요!</h2>
+        </div>
+        <span class="text-5xl hidden sm:inline">🚀</span>
+    </div>
+
+    <!-- 핵심 활동 카드 영역 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+
+        <!-- [활동 1] AI 사물 감지 스캐너 -->
+        <div onclick="openScannerModal()" class="group bg-white rounded-3xl p-6 shadow-sm border border-slate-200 hover:shadow-md transition duration-300 cursor-pointer flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-start">
+                    <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full">비전 AI 탐구</span>
+                    <span class="text-2xl">🤖</span>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 mt-4">1. AI 사물 감지 스캐너</h3>
+                <p class="text-slate-400 text-xs mt-1">카메라로 물건을 비추면 AI가 무엇인지 찾아냅니다.</p>
+            </div>
+            <div class="mt-6 flex justify-between items-center">
+                <span class="text-xs font-bold text-indigo-600 bg-indigo-50 px-3.5 py-2 rounded-xl border border-indigo-100 group-hover:bg-indigo-600 group-hover:text-white transition">
+                  AI 카메라 실행 ➔
+                </span>
+            </div>
+        </div>
+
+        <!-- [활동 2] 아두이노 온·습도 센서 -->
+        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-start">
+                    <span class="bg-sky-100 text-sky-700 text-xs font-bold px-3 py-1 rounded-full">센서 읽기 (입력)</span>
+                    <span class="text-2xl">🌡️</span>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 mt-4">2. 교실 온·습도 센서</h3>
+                <p class="text-slate-400 text-xs mt-1">아두이노 DHT11 센서 실시간 측정값</p>
+
+                <div class="grid grid-cols-2 gap-3 mt-4">
+                    <div class="bg-sky-50 rounded-2xl p-3 text-center border border-sky-100">
+                        <span class="text-xs text-sky-600 font-bold">현재 온도</span>
+                        <div id="temp-val" class="text-2xl font-black text-sky-900 mt-1">24.5 °C</div>
+                    </div>
+                    <div class="bg-emerald-50 rounded-2xl p-3 text-center border border-emerald-100">
+                        <span class="text-xs text-emerald-600 font-bold">현재 습도</span>
+                        <div id="hum-val" class="text-2xl font-black text-emerald-900 mt-1">50 %</div>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4 text-xs text-center text-slate-400">
+                상태: <span id="temp-status" class="font-bold text-emerald-600">😊 쾌적함</span>
+            </div>
+        </div>
+
+        <!-- [활동 3] 스마트 무드등 제어 -->
+        <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+            <div>
+                <div class="flex justify-between items-start">
+                    <span class="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full">부품 제어 (출력)</span>
+                    <span class="text-2xl">💡</span>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 mt-4">3. RGB 무드등 스위치</h3>
+                <p class="text-slate-400 text-xs mt-1">웹에서 색상을 눌러 LED를 켜보세요.</p>
+
+                <div class="flex justify-around mt-5">
+                    <button onclick="changeLed('red')" class="w-12 h-12 rounded-full bg-rose-500 hover:scale-110 active:scale-95 transition shadow-md border-2 border-white"></button>
+                    <button onclick="changeLed('green')" class="w-12 h-12 rounded-full bg-emerald-500 hover:scale-110 active:scale-95 transition shadow-md border-2 border-white"></button>
+                    <button onclick="changeLed('blue')" class="w-12 h-12 rounded-full bg-blue-500 hover:scale-110 active:scale-95 transition shadow-md border-2 border-white"></button>
+                    <button onclick="changeLed('off')" class="w-12 h-12 rounded-full bg-slate-300 hover:scale-110 active:scale-95 transition shadow-md border-2 border-white flex items-center justify-center font-bold text-xs text-slate-600">OFF</button>
+                </div>
+            </div>
+            <div class="mt-4 text-xs text-center text-slate-500 font-medium">
+                현재 선택: <span id="led-status" class="font-bold text-slate-800">꺼짐</span>
+            </div>
+        </div>
+
+        <!-- [활동 4] 아두이노 반응속도 테스트 (통합형 UI) -->
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col justify-between overflow-hidden p-6">
+            <div>
+                <div class="flex justify-between items-start">
+                    <span class="bg-orange-100 text-orange-700 text-xs font-bold px-3 py-1 rounded-full">아두이노 미니게임</span>
+                    <span class="text-2xl">⚡</span>
+                </div>
+                <h3 class="text-xl font-bold text-slate-800 mt-4">4. 반응속도 테스트</h3>
+                <p class="text-slate-400 text-xs mt-1">아두이노 스위치를 눌러 반응속도를 측정해보세요.</p>
+
+                <!-- 게임 상태 및 메시지 박스 -->
+                <div id="reaction-bg" class="mt-4 p-4 rounded-2xl bg-slate-100 border border-slate-200 text-center transition-all duration-300">
+                    <span id="reaction-badge" class="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-slate-300 text-slate-700 uppercase tracking-wide">READY</span>
+                    <p id="reaction-message" class="text-sm font-extrabold text-slate-700 mt-2">
+                        아두이노 스위치를 누르면 시작합니다!
+                    </p>
+                    <div id="reaction-time-display" class="text-2xl font-black text-indigo-600 mt-1 hidden">
+                        0 ms
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-4 text-xs text-center text-slate-400">
+                실시간 서버 감지 중...
+            </div>
+        </div>
+
+    </div>
+
+    <!-- 과목별 개별 만족도 조사 영역 -->
+    <div class="space-y-4 pt-4 border-t border-slate-200">
+        <div class="flex justify-between items-end">
+            <div>
+                <span class="text-xs font-bold text-indigo-600 uppercase tracking-wider">EVALUATION</span>
+                <h2 class="text-2xl font-black text-slate-800">📊 과목별 활동 만족도 조사</h2>
+            </div>
+            <span class="text-xs text-slate-400">각 활동을 직접 경험하면 설문이 자동으로 열립니다.</span>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+
+            <!-- [과목 1 설문] AI 사물 감지 스캐너 -->
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between relative overflow-hidden">
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="bg-indigo-100 text-indigo-700 text-xs font-bold px-3 py-1 rounded-full">정보 / AI 과목</span>
+                        <span class="text-2xl">🤖</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800">1. AI 사물 감지 평가</h3>
+
+                    <!-- 잠금 상태 -->
+                    <div id="survey-scanner-locked" class="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-6 text-center space-y-2">
+                        <span class="text-3xl">🔒</span>
+                        <p class="text-xs font-bold text-slate-600">[1. AI 사물 감지기]를 직접 체험하면 설문이 열립니다!</p>
+                    </div>
+
+                    <!-- 잠금 해제 폼 -->
+                    <form id="survey-scanner-unlocked" onsubmit="submitIndividualSurvey(event, 'scanner')" class="hidden space-y-3 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">인공지능의 사물 인식은 얼마나 정확했나요?</label>
+                            <select required class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                <option value="">선택해주세요</option>
+                                <option>😍 매우 정확하고 신기했다</option>
+                                <option>🙂 대체로 잘 맞췄다</option>
+                                <option>🙁 조금 아쉬웠다</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">AI에 대해 새롭게 알게 된 점</label>
+                            <input type="text" placeholder="예: 사물마다 확신(%)을 보인다는 점" required class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs shadow transition active:scale-95">
+                            제출하기 📝
+                        </button>
+                    </form>
+
+                    <!-- 제출 완료 상태 -->
+                    <div id="survey-scanner-completed" class="hidden bg-indigo-50 border border-indigo-200 rounded-2xl p-6 text-center text-indigo-700 space-y-1">
+                        <span class="text-3xl">🎉</span>
+                        <p class="text-sm font-extrabold">제출 완료!</p>
+                        <p class="text-xs text-indigo-500">소중한 의견 감사합니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- [과목 2 설문] 온·습도 센서 -->
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between relative overflow-hidden">
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="bg-sky-100 text-sky-700 text-xs font-bold px-3 py-1 rounded-full">과학 / 탐구 과목</span>
+                        <span class="text-2xl">🌡️</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800">2. 온·습도 센서 평가</h3>
+
+                    <!-- 잠금 상태 -->
+                    <div id="survey-sensor-locked" class="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-6 text-center space-y-2">
+                        <span class="text-3xl">🔒</span>
+                        <p class="text-xs font-bold text-slate-600">아두이노를 연결하면 설문이 열립니다!</p>
+                    </div>
+
+                    <!-- 잠금 해제 폼 -->
+                    <form id="survey-sensor-unlocked" onsubmit="submitIndividualSurvey(event, 'sensor')" class="hidden space-y-3 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">실시간 교실 환경 측정 흥미도</label>
+                            <select required class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500">
+                                <option value="">선택해주세요</option>
+                                <option>⭐ 매우 재미있었다</option>
+                                <option>⭐ 보통이었다</option>
+                                <option>⭐ 별로였다</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">센서 데이터로 하고 싶은 활동</label>
+                            <input type="text" placeholder="예: 교실 환기 알림 시스템 만들기" required class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-sky-600 hover:bg-sky-700 text-white font-bold rounded-xl text-xs shadow transition active:scale-95">
+                            제출하기 📝
+                        </button>
+                    </form>
+
+                    <!-- 제출 완료 상태 -->
+                    <div id="survey-sensor-completed" class="hidden bg-sky-50 border border-sky-200 rounded-2xl p-6 text-center text-sky-700 space-y-1">
+                        <span class="text-3xl">🎉</span>
+                        <p class="text-sm font-extrabold">제출 완료!</p>
+                        <p class="text-xs text-sky-500">소중한 의견 감사합니다.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- [과목 3 설문] RGB 무드등 -->
+            <div class="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between relative overflow-hidden">
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="bg-purple-100 text-purple-700 text-xs font-bold px-3 py-1 rounded-full">실과 / SW 과목</span>
+                        <span class="text-2xl">💡</span>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800">3. 무드등 제어 평가</h3>
+
+                    <!-- 잠금 상태 -->
+                    <div id="survey-led-locked" class="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-6 text-center space-y-2">
+                        <span class="text-3xl">🔒</span>
+                        <p class="text-xs font-bold text-slate-600">무드등 스위치를 클릭해 켜보면 설문이 열립니다!</p>
+                    </div>
+
+                    <!-- 잠금 해제 폼 -->
+                    <form id="survey-led-unlocked" onsubmit="submitIndividualSurvey(event, 'led')" class="hidden space-y-3 pt-2">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">웹으로 빛을 제어하는 체험은 어땠나요?</label>
+                            <select required class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option value="">선택해주세요</option>
+                                <option>💡 직접 조종해서 신기했다</option>
+                                <option>💡 무난했다</option>
+                                <option>💡 어려웠다</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">가장 좋았던 LED 색상은?</label>
+                            <select required class="w-full p-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                <option value="">선택해주세요</option>
+                                <option>🔴 빨간색</option>
+                                <option>🟢 초록색</option>
+                                <option>🔵 파란색</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl text-xs shadow transition active:scale-95">
+                            제출하기 📝
+                        </button>
+                    </form>
+
+                    <!-- 제출 완료 상태 -->
+                    <div id="survey-led-completed" class="hidden bg-purple-50 border border-purple-200 rounded-2xl p-6 text-center text-purple-700 space-y-1">
+                        <span class="text-3xl">🎉</span>
+                        <p class="text-sm font-extrabold">제출 완료!</p>
+                        <p class="text-xs text-purple-500">소중한 의견 감사합니다.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+</div>
+<!-- 5. AI 사물 감지 모달 (카메라 & 감지 텍스트 출력) -->
+<div id="scanner-modal" class="hidden fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white w-full max-w-xl rounded-3xl flex flex-col overflow-hidden shadow-2xl border border-slate-100">
+        <!-- 모달 헤더 -->
+        <div class="p-4 bg-slate-900 text-white flex justify-between items-center">
+            <h3 class="font-bold flex items-center gap-2">🤖 실시간 AI 사물 감지기</h3>
+            <button onclick="closeScannerModal()" class="px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl text-xs transition">닫기 ✕</button>
+        </div>
+
+        <!-- 모달 본문 -->
+        <div class="p-5 flex flex-col items-center space-y-4">
+            <!-- AI 인공지능 상태 안내 카드 -->
+            <div id="aiStatusBadge" class="w-full bg-indigo-50 border border-indigo-200 rounded-2xl p-4 text-center">
+                <span class="text-xs text-indigo-500 font-bold block">AI 모델 상태</span>
+                <span id="aiStatusText" class="text-base font-extrabold text-indigo-700">✨ [사진 찍기] 버튼을 누르면 AI가 사물을 분석합니다!</span>
+            </div>
+
+            <!-- 카메라 화면 -->
+            <div class="relative w-full h-72 bg-black rounded-2xl overflow-hidden border-4 border-indigo-500 shadow-inner flex items-center justify-center">
+                <video id="videoView" autoplay playsinline class="w-full h-full object-cover"></video>
+
+                <!-- 사물 인식되었을 때 텍스트 오버레이 -->
+                <div id="detectedLabel" class="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/80 backdrop-blur-md text-white font-black text-xl px-6 py-3 rounded-2xl border border-white/20 shadow-xl transition-all duration-300 opacity-0 transform translate-y-2">
+                    🔍 감지 중...
+                </div>
+            </div>
+
+            <!-- [사진 찍어서 AI 분석하기] 버튼 -->
+            <button onclick="captureAndDetect()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-black rounded-2xl shadow-lg transition active:scale-95 text-sm flex items-center justify-center gap-2">
+                📸 사진 찍어서 AI 분석하기
+            </button>
+
+            <!-- 설명 박스 -->
+            <div class="w-full bg-slate-100 rounded-xl p-3 text-center text-xs text-slate-500 font-medium">
+                💡 사물을 카메라 중앙에 대고 버튼을 누르면 Gemini AI가 즉시 판독합니다!
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    /* ====================================================
+       🎨 학년 및 성별 선택 다이얼로그 동적 스크립트
+    ==================================================== */
+    function selectGrade(grade) {
+      document.getElementById('input-grade').value = grade;
+      const buttons = document.querySelectorAll('#grade-grid .grade-btn');
+
+      buttons.forEach(btn => {
+        if (btn.innerText === grade) {
+          btn.className = "grade-btn py-2.5 rounded-xl border-2 border-indigo-600 bg-indigo-600 text-white text-xs font-extrabold shadow-md transition";
+        } else {
+          btn.className = "grade-btn py-2.5 rounded-xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-600 hover:bg-slate-100 transition";
+        }
+      });
+    }
+
+    function selectGender(gender) {
+      document.getElementById('input-gender').value = gender;
+      const buttons = document.querySelectorAll('#gender-grid .gender-btn');
+
+      buttons.forEach(btn => {
+        if (btn.innerText.includes(gender)) {
+          btn.className = "gender-btn py-3.5 px-4 rounded-2xl border-2 border-indigo-600 bg-indigo-50/70 text-indigo-700 text-sm font-black flex items-center justify-center gap-2 shadow-sm transition active:scale-95";
+        } else {
+          btn.className = "gender-btn py-3.5 px-4 rounded-2xl border border-slate-200 bg-slate-50 text-slate-600 text-sm font-bold flex items-center justify-center gap-2 hover:bg-slate-100 transition active:scale-95";
+        }
+      });
+    }
+
+    /* ====================================================
+       🔑 로그인 처리 및 백엔드 연동
+    ==================================================== */
+    async function handleLogin(event) {
+      event.preventDefault();
+
+      const schoolName = document.getElementById('input-school').value;
+      const grade = document.getElementById('input-grade').value;
+      const gender = document.getElementById('input-gender').value;
+
+      const payload = { schoolName, grade, gender };
+
+      try {
+        const response = await fetch('http://localhost:8080/api/students/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error(`서버 응답 에러: ${response.status}`);
+
+        const data = await response.json();
+
+        document.getElementById('display-school-grade').innerText = `${data.schoolName || schoolName} ${data.grade || grade}`;
+        document.getElementById('display-gender').innerText = data.gender || gender;
+        document.getElementById('login-modal').classList.add('hidden');
+
+      } catch (error) {
+        console.error('로그인 연동 에러:', error);
+        document.getElementById('display-school-grade').innerText = `${schoolName} ${grade}`;
+        document.getElementById('display-gender').innerText = gender;
+        document.getElementById('login-modal').classList.add('hidden');
+      }
+    }
+    /* ====================================================
+   ⚡ 통합 아두이노 반응속도 게임 실시간 조회 (0.5초 주기)
+       ==================================================== */
+async function fetchReactionData() {
+    try {
+        const response = await fetch('/api/arduino/reaction');
+        if (!response.ok) return;
+
+        const data = await response.json();
+        // data 예시: { state: "READY", message: "초록불이 켜지면 누르세요!", time: 240 }
+
+        const bgElem = document.getElementById('reaction-bg');
+        const badgeElem = document.getElementById('reaction-badge');
+        const msgElem = document.getElementById('reaction-message');
+        const timeElem = document.getElementById('reaction-time-display');
+
+        if (!bgElem || !data) return;
+
+        // 1. 안내 메시지 업데이트
+        if (data.message) {
+            msgElem.innerText = data.message;
+        }
+
+        // 2. 게임 상태(state)에 따른 카드뷰 디자인 동적 변경
+        switch (data.state) {
+            case 'READY': // 준비 상태 (노란색/주황색)
+                badgeElem.innerText = "준비 중";
+                badgeElem.className = "text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-200 text-amber-800";
+                bgElem.className = "mt-4 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-center transition-all";
+                timeElem.classList.add('hidden');
+                break;
+
+            case 'START': // 버튼 누를 타이밍 (초록색)
+                badgeElem.innerText = "지금 누르세요!";
+                badgeElem.className = "text-[10px] font-black px-2.5 py-0.5 rounded-full bg-emerald-500 text-white animate-bounce";
+                bgElem.className = "mt-4 p-4 rounded-2xl bg-emerald-100 border border-emerald-300 text-center transition-all";
+                timeElem.classList.add('hidden');
+                break;
+
+            case 'RESULT': // 결과 출력 (보라색/파란색)
+                badgeElem.innerText = "측정 완료";
+                badgeElem.className = "text-[10px] font-black px-2.5 py-0.5 rounded-full bg-indigo-200 text-indigo-800";
+                bgElem.className = "mt-4 p-4 rounded-2xl bg-indigo-50 border border-indigo-200 text-center transition-all";
+
+                if (data.time > 0) {
+                    timeElem.innerText = `${data.time} ms`;
+                    timeElem.classList.remove('hidden');
+                }
+                break;
+
+            case 'FOUL': // 실격/파울 (빨간색)
+                badgeElem.innerText = "경고";
+                badgeElem.className = "text-[10px] font-black px-2.5 py-0.5 rounded-full bg-rose-200 text-rose-800";
+                bgElem.className = "mt-4 p-4 rounded-2xl bg-rose-50 border border-rose-200 text-center transition-all";
+                timeElem.classList.add('hidden');
+                break;
+
+            default: // IDLE (대기 상태)
+                badgeElem.innerText = "대기 중";
+                badgeElem.className = "text-[10px] font-black px-2.5 py-0.5 rounded-full bg-slate-200 text-slate-700";
+                bgElem.className = "mt-4 p-4 rounded-2xl bg-slate-100 border border-slate-200 text-center transition-all";
+                timeElem.classList.add('hidden');
+                break;
+        }
+
+    } catch (error) {
+        console.warn("반응속도 데이터 수신 대기 중...", error);
+    }
+}
+
+// 0.5초(500ms)마다 아두이노 반응속도 상태 업데이트
+setInterval(fetchReactionData, 500);
+
+/* ====================================================
+   🤖 스마트홈 If-Then 조건문 자동화 엔진
+==================================================== */
+let isRuleActive = false;
+let lastExecutedAction = ""; // 중복 명령 전송 방지용
+function updateRuleOptions() {
+    const sensor = document.getElementById('rule-sensor').value;
+    const conditionSelect = document.getElementById('rule-condition');
+    conditionSelect.innerHTML = '';
+
+    let options = [];
+    if (sensor === 'TEMP') {
+        options = [
+            { val: 'TEMP_ABOVE_20', text: '🔥 20°C 이상일 때' },
+            { val: 'TEMP_LOW_18', text: '❄️ 18°C 이하일 때' }
+        ];
+    } else if (sensor === 'HUMI') {
+        options = [
+            { val: 'HUMI_BELOW_60', text: '🌵 60% 미만(아래)일 때' },
+            { val: 'HUMI_HIGH_70', text: '🌧️ 70% 이상일 때' }
+        ];
+    } else if (sensor === 'AI') {
+        options = [
+            { val: 'PERSON', text: '👤 사람 감지 시' },
+            { val: 'CUP', text: '☕ 컵 감지 시' },
+            { val: 'CELL_PHONE', text: '📱 스마트폰 감지 시' }
+        ];
+    }
+
+    options.forEach(opt => {
+        const el = document.createElement('option');
+        el.value = opt.val;
+        el.innerText = opt.text;
+        conditionSelect.appendChild(el);
+    });
+}
+// 초기 실행
+updateRuleOptions();
+
+// 2. 규칙 ON / OFF 토글
+function toggleSmartRule() {
+    const btn = document.getElementById('rule-toggle-btn');
+    const badge = document.getElementById('smart-status-badge');
+    const log = document.getElementById('smart-log');
+
+    isRuleActive = !isRuleActive;
+
+    if (isRuleActive) {
+        btn.innerText = "⏹️ 규칙 일시정지";
+        btn.className = "w-full md:w-auto px-6 py-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold transition shadow-md active:scale-95 whitespace-nowrap";
+        badge.innerText = "RUNNING";
+        badge.className = "px-2 py-0.5 rounded text-[10px] bg-emerald-500 text-white animate-pulse";
+        log.innerText = "System: 실시간 감지 작동 중...";
+    } else {
+        btn.innerText = "▶️ 규칙 작동 시작";
+        btn.className = "w-full md:w-auto px-6 py-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition shadow-md active:scale-95 whitespace-nowrap";
+        badge.innerText = "OFF";
+        badge.className = "px-2 py-0.5 rounded text-[10px] bg-slate-700 text-slate-300";
+        log.innerText = "System: 규칙 작동이 정지되었습니다.";
+        lastExecutedAction = "";
+    }
+}
+
+// 3. 주기적으로 실행되는 조건문 평가 함수 (기존 센서/AI 루프에서 호출)
+function evaluateSmartHomeRule(currentTemp, currentHumi, aiDetectedObjects = []) {
+    if (!isRuleActive) return;
+
+    const sensor = document.getElementById('rule-sensor').value;
+    const condition = document.getElementById('rule-condition').value;
+    const action = document.getElementById('rule-action').value;
+
+    let isConditionMet = false;
+
+    // A. 온도 조건 평가
+    if (sensor === 'TEMP') {
+        if (condition === 'TEMP_GT_28' && currentTemp >= 28) isConditionMet = true;
+        if (condition === 'TEMP_GT_30' && currentTemp >= 30) isConditionMet = true;
+        if (condition === 'TEMP_LT_20' && currentTemp <= 20) isConditionMet = true;
+    }
+    // B. 습도 조건 평가
+    else if (sensor === 'HUMI') {
+        if (condition === 'HUMI_GT_70' && currentHumi >= 70) isConditionMet = true;
+        if (condition === 'HUMI_LT_40' && currentHumi <= 40) isConditionMet = true;
+    }
+    // C. AI 카메라 조건 평가
+    else if (sensor === 'AI') {
+        const targetClass = condition.replace('AI_', '');
+        if (aiDetectedObjects.includes(targetClass)) isConditionMet = true;
+    }
+
+    // 조건이 맞고, 이전 동작과 다를 때만 아두이노로 명령 전송 (중복 방지)
+    if (isConditionMet) {
+        if (lastExecutedAction !== action) {
+            lastExecutedAction = action;
+            triggerArduinoActuator(action);
+            document.getElementById('smart-log').innerText = `⚡ [조건 성립!] ➔ 무드등 [${action}] 실행`;
+        }
+    } else {
+        // 조건이 안 맞을 때 기본 상태(끄기)로 원복하고 싶다면 아래 주석 해제
+        /*
+        if (lastExecutedAction !== 'OFF') {
+            lastExecutedAction = 'OFF';
+            triggerArduinoActuator('OFF');
+            document.getElementById('smart-log').innerText = `System: 조건 미성립 ➔ 무드등 끄기`;
+        }
+        */
+    }
+}
+
+// 4. 백엔드로 아두이노 제어 요청 보내기
+async function triggerArduinoActuator(actionCommand) {
+    try {
+        await fetch('/api/arduino/control', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ command: actionCommand })
+        });
+    } catch (e) {
+        console.error("아두이노 제어 실패:", e);
+    }
+}
+/* ====================================================
+   🔌 아두이노 실시간 연결 상태 자동 감지
+==================================================== */
+async function checkArduinoConnection() {
+    try {
+        const response = await fetch('/api/arduino/status');
+        if (!response.ok) {
+            updateArduinoHeaderUI(false);
+            return;
+        }
+
+        const data = await response.json();
+        // 백엔드 응답 예시: { "connected": true, "portName": "/dev/cu.usbmodem1101" }
+
+        updateArduinoHeaderUI(data.connected, data.portName);
+
+    } catch (error) {
+        // 백엔드 서버가 꺼져있거나 통신 실패 시 미연결 처리
+        updateArduinoHeaderUI(false);
+    }
+}
+// 백엔드/아두이노로부터 온·습도 데이터를 받아올 때 호출되는 함수
+function handleSensorData(temp, humi) {
+    // 1. 화면의 센서 값 업데이트
+    document.getElementById('temp-val').innerText = `${temp} °C`;
+    document.getElementById('hum-val').innerText = `${humi} %`;
+
+    // 2. '▶️ 규칙 작동 시작' 상태가 아니면 실행하지 않고 종료
+    if (!isRuleRunning) return;
+
+    const sensor = document.getElementById('rule-sensor').value;       // "TEMP" 또는 "HUMI"
+    const condition = document.getElementById('rule-condition').value; // "TEMP_ABOVE_20" 또는 "HUMI_BELOW_60"
+    const action = document.getElementById('rule-action').value;       // "RED", "GREEN", "BLUE", "OFF"
+
+    let isTriggered = false;
+
+    // [온도 조건 확인] 20도 이상
+    if (sensor === 'TEMP' && condition === 'TEMP_ABOVE_20') {
+        if (temp >= 20) isTriggered = true;
+    }
+    // [습도 조건 확인] 60% 미만(아래)
+    else if (sensor === 'HUMI' && condition === 'HUMI_BELOW_60') {
+        if (humi < 60) isTriggered = true;
+    }
+
+    // 3. 조건이 맞으면 LED 색상 변경 및 로그 출력
+    if (isTriggered) {
+        changeLed(action);
+        const sensorText = sensor === 'TEMP' ? `온도(${temp}°C)` : `습도(${humi}%)`;
+        document.getElementById('smart-log').innerText =
+            `System: [조건 충족] ${sensorText} ➔ 무드등 [${action}] 제어 명령 전송!`;
+    }
+}
+// 상단 헤더 버튼 UI 업데이트 함수
+function updateArduinoHeaderUI(isConnected, portName = '') {
+    const dot = document.getElementById('arduino-dot');
+    const text = document.getElementById('arduino-text');
+    const btn = document.getElementById('arduino-btn');
+
+    if (!dot || !text || !btn) return;
+
+    if (isConnected) {
+        // 🟢 연결되었을 때 (초록색 테마)
+        dot.className = "w-3.5 h-3.5 rounded-full bg-emerald-500 animate-ping";
+        text.innerText = `🟢 아두이노 연결됨 ${portName ? '(' + portName + ')' : ''}`;
+        btn.className = "flex items-center gap-3 px-5 py-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold transition";
+
+        // 연결 성공 시 온·습도 평가 설문 자동 잠금 해제
+        unlockSurvey('sensor');
+    } else {
+        // 🔴 미연결 상태일 때 (빨간색 테마)
+        dot.className = "w-3.5 h-3.5 rounded-full bg-rose-500 animate-pulse";
+        text.innerText = "🔌 아두이노 미연결";
+        btn.className = "flex items-center gap-3 px-5 py-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 font-bold transition hover:bg-rose-100 active:scale-95";
+    }
+}
+
+// 페이지 로드 후 2초마다 아두이노 연결 상태 주기적 체크
+setInterval(checkArduinoConnection, 2000);
+// 페이지 처음 들어왔을 때 즉시 1회 체크
+checkArduinoConnection();
+
+    async function fetchDhtData() {
+      if (!isArduinoConnected) return;
+
+      try {
+        const response = await fetch('http://localhost:8080/api/arduino/dht');
+        if (response.ok) {
+          const data = await response.json();
+          document.getElementById('temp-val').innerText = `${data.temperature} °C`;
+          document.getElementById('hum-val').innerText = `${data.humidity} %`;
+
+          if(data.temperature > 28) {
+            document.getElementById('temp-status').innerText = "🔥 무더움";
+            document.getElementById('temp-status').className = "font-bold text-rose-600";
+          } else {
+            document.getElementById('temp-status').innerText = "😊 쾌적함";
+            document.getElementById('temp-status').className = "font-bold text-emerald-600";
+          }
+        }
+      } catch (err) {
+        console.warn('DHT 데이터 가져오기 실패:', err);
+      }
+    }
+    setInterval(fetchDhtData, 2000);
+
+  async function changeLed(color) {
+    console.log(`📡 [1. 프론트엔드] changeLed() 호출됨 | 요청 색상: ${color}`);
+
+    document.getElementById('led-status').innerText = color;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/arduino/led`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ color })
+        });
+
+        console.log(`🟢 [1. 프론트엔드] 서버 응답 완료 | 상태 코드: ${response.status}`);
+    } catch (e) {
+        console.error("🔴 [1. 프론트엔드] 백엔드 서버 통신 에러 발생:", e);
+    }
+}
+
+    /* ====================================================
+       📊 개별 설문 제어
+    ==================================================== */
+    function unlockSurvey(type) {
+      const lockedElem = document.getElementById(`survey-${type}-locked`);
+      const unlockedElem = document.getElementById(`survey-${type}-unlocked`);
+
+      if (lockedElem && unlockedElem) {
+        lockedElem.classList.add('hidden');
+        unlockedElem.classList.remove('hidden');
+      }
+    }
+
+    async function submitIndividualSurvey(event, type) {
+      event.preventDefault();
+
+      const unlockedElem = document.getElementById(`survey-${type}-unlocked`);
+      const completedElem = document.getElementById(`survey-${type}-completed`);
+
+      if (unlockedElem && completedElem) {
+        unlockedElem.classList.add('hidden');
+        completedElem.classList.remove('hidden');
+      }
+    }
+
+    /* ====================================================
+       ☁️ 백엔드 Vision AI 사물 분석 스크립트 (클라우드 연동)
+    ==================================================== */
+    const video = document.getElementById('videoView');
+    const aiStatusText = document.getElementById('aiStatusText');
+    const detectedLabel = document.getElementById('detectedLabel');
+
+    let mediaStream = null;
+    let scanInterval = null;      // 실시간 사람/사물 감지용 인터벌
+    let isAnalyzing = false;
+    let cocoModel = null;         // 브라우저에서 바로 도는 실시간 감지 모델 (coco-ssd)
+    let personPreviouslyDetected = false; // 사람이 "새로" 나타났을 때만 반응시키기 위한 상태값
+
+    /* 🤖 페이지가 열리자마자 실시간 감지 모델을 미리 불러둔다 (카메라를 켜는 순간 바로 쓰기 위함) */
+    async function loadCocoModel() {
+      try {
+        cocoModel = await cocoSsd.load();
+        console.log("✅ 실시간 사람 감지 모델(coco-ssd) 로드 완료");
+      } catch (e) {
+        console.error("❌ 실시간 감지 모델 로드 실패:", e);
+      }
+    }
+    loadCocoModel();
+
+    function openScannerModal() {
+      document.getElementById('scanner-modal').classList.remove('hidden');
+      aiStatusText.innerText = "✨ 카메라를 켜는 중입니다...";
+
+      navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: "environment" }
+      })
+      .then(stream => {
+        mediaStream = stream;
+        video.srcObject = stream;
+        video.play();
+        aiStatusText.innerText = "✨ [사진 찍기]로 직접 분석하거나, 카메라에 사람이 잡히면 자동으로 감지돼요!";
+        startLivePersonWatch(); // 🔴 카메라가 켜진 동안 실시간으로 사람을 계속 감지
+      })
+      .catch(err => {
+        console.error("카메라 접근 에러:", err);
+        alert("카메라 권한을 허용해 주세요!");
+        closeScannerModal();
+      });
+    }
+
+    function closeScannerModal() {
+      if (mediaStream) {
+        mediaStream.getTracks().forEach(track => track.stop());
+        mediaStream = null;
+      }
+      stopLivePersonWatch();
+      document.getElementById('scanner-modal').classList.add('hidden');
+      unlockSurvey('scanner');
+    }
+
+    /* ====================================================
+       👤 실시간 사람 감지 → 스마트홈 규칙 엔진(RGB LED) 연동
+       - 카메라가 켜져 있는 동안 0.7초마다 화면을 분석한다.
+       - "스마트홈 IoT" 카드에서 IF(AI 카메라-사람 감지) → THEN(RGB 색상) 규칙을
+         켜둔 상태라면, 사람이 감지될 때 자동으로 무드등 색이 바뀐다.
+    ==================================================== */
+    function startLivePersonWatch() {
+      if (scanInterval) return; // 이미 실행 중이면 중복 실행 방지
+      personPreviouslyDetected = false;
+
+      scanInterval = setInterval(async () => {
+        if (!cocoModel || !video.videoWidth) return; // 모델/영상 준비 전이면 대기
+
+        try {
+          const predictions = await cocoModel.detect(video);
+          handleLiveDetection(predictions);
+        } catch (e) {
+          console.warn("실시간 감지 중 오류:", e);
+        }
+      }, 700);
+    }
+
+    function stopLivePersonWatch() {
+      if (scanInterval) {
+        clearInterval(scanInterval);
+        scanInterval = null;
+      }
+      personPreviouslyDetected = false;
+    }
+
+    // coco-ssd 클래스명 → 스마트홈 규칙(IF 조건)에서 쓰는 코드로 변환
+    const AI_CLASS_MAP = { person: 'PERSON', cup: 'CUP', 'cell phone': 'CELL_PHONE' };
+
+    function handleLiveDetection(predictions) {
+      const confident = predictions.filter(p => p.score > 0.6); // 신뢰도 60% 이상만 채택
+      const detectedCodes = confident.map(p => AI_CLASS_MAP[p.class]).filter(Boolean);
+      const personDetected = detectedCodes.includes('PERSON');
+
+      // 1. 화면 위 실시간 감지 라벨 오버레이 업데이트
+      if (confident.length > 0) {
+        const top = confident.reduce((a, b) => (a.score > b.score ? a : b));
+        const label = top.class === 'person' ? '사람' : top.class;
+        detectedLabel.innerText = `🔍 ${label} 감지됨 (${Math.round(top.score * 100)}%)`;
+        detectedLabel.classList.remove('opacity-0', 'translate-y-2');
+        detectedLabel.classList.add('opacity-100', 'translate-y-0');
+      } else {
+        detectedLabel.classList.add('opacity-0', 'translate-y-2');
+        detectedLabel.classList.remove('opacity-100', 'translate-y-0');
+      }
+
+      // 2. 스마트홈 IF-THEN 규칙 엔진으로 실시간 감지 결과 전달
+      //    (rule-toggle-btn으로 규칙이 켜져 있을 때만 실제로 LED가 바뀐다)
+      const currentTemp = parseFloat(document.getElementById('temp-val').innerText) || 0;
+      const currentHumi = parseFloat(document.getElementById('hum-val').innerText) || 0;
+      evaluateSmartHomeRule(currentTemp, currentHumi, detectedCodes);
+
+      // 3. 사람이 "새로" 감지되거나 사라졌을 때만 상태 메시지 갱신 (중복 로그 방지)
+      if (personDetected && !personPreviouslyDetected) {
+        aiStatusText.innerText = "🙋 사람이 감지되었습니다!";
+      } else if (!personDetected && personPreviouslyDetected) {
+        aiStatusText.innerText = "✨ 계속 감지 중... (카메라에 사람이 없어요)";
+      }
+      personPreviouslyDetected = personDetected;
+    }
+
+    async function captureAndDetect() {
+      if (isAnalyzing || !video.videoWidth) return;
+
+      isAnalyzing = true;
+      aiStatusText.innerText = "🔍 AI가 사물을 정밀 분석 중...";
+
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const base64Image = canvas.toDataURL('image/jpeg', 0.6);
+
+      try {
+        const response = await fetch('http://localhost:8080/api/ai/detect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: base64Image })
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.objectName) {
+          detectedLabel.innerText = `🔍 ${data.objectName}`;
+          detectedLabel.classList.remove('opacity-0', 'translate-y-2');
+          detectedLabel.classList.add('opacity-100', 'translate-y-0');
+          aiStatusText.innerText = `✅ 분석 완료: ${data.objectName}`;
+        } else {
+          aiStatusText.innerText = `❌ 에러 발생: ${data.objectName || '서버 응답 오류'}`;
+        }
+      } catch (error) {
+        console.error("AI 서버 통신 에러:", error);
+        aiStatusText.innerText = "❌ 백엔드 서버(localhost:8080) 연결 실패";
+      } finally {
+        isAnalyzing = false;
+      }
+    }
+</script>
+
+
+</body>
+</html>
