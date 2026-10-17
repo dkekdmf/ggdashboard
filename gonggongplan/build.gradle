@@ -20,6 +20,15 @@ repositories {
 dependencies {
     runtimeOnly 'com.mysql:mysql-connector-j'
     implementation 'com.fazecast:jSerialComm:2.11.0'
+
+    // MQTT — 브로커를 앱에 내장해서 교실에서 프로그램을 따로 띄우지 않아도 되게 한다
+    // moquette 가 끌고 오는 옛 로그 라이브러리(reload4j)가 스프링의 logback 과 충돌하므로 제외한다
+    implementation('io.moquette:moquette-broker:0.17') {
+        exclude group: 'org.slf4j', module: 'slf4j-reload4j'
+        exclude group: 'ch.qos.reload4j', module: 'reload4j'
+        exclude group: 'log4j', module: 'log4j'
+    }
+    implementation 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.5'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-h2console'
 	implementation 'org.springframework.boot:spring-boot-starter-restclient'

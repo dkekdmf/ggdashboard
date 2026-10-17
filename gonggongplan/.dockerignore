@@ -1,0 +1,10 @@
+# 이미지에 들어갈 필요 없는 것들 (빌드 속도와 이미지 크기를 위해)
+.gradle/
+build/classes/
+build/resources/
+build/tmp/
+build/reports/
+src/
+.idea/
+*.iml
+survey_results.csv
