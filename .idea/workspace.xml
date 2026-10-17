@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="09c792ae-ceed-408a-b14e-020df276d351" name="변경" comment="">
+      <change afterPath="$PROJECT_DIR$/gonggongplan/Dockerfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gonggongplan/build.gradle" beforeDir="false" afterPath="$PROJECT_DIR$/gonggongplan/build.gradle" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/DemoApplication.java" beforeDir="false" afterPath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/DemoApplication.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/config/WebConfig.java" beforeDir="false" afterPath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/config/WebConfig.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/controller/AiDetectionController.java" beforeDir="false" afterPath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/controller/AiDetectionController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/controller/ArduinoController.java" beforeDir="false" afterPath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/controller/ArduinoController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/controller/StudentController.java" beforeDir="false" afterPath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/controller/StudentController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/dto/StudentRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/dto/StudentRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/dto/StudentResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/dto/StudentResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/model/Student.java" beforeDir="false" afterPath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/model/Student.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/repository/StudentRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/repository/StudentRepository.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/service/ArduinoService.java" beforeDir="false" afterPath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/service/ArduinoService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/service/GoogleSheetService.java" beforeDir="false" afterPath="$PROJECT_DIR$/gonggongplan/src/main/java/com/example/gonggongplan/demo/service/GoogleSheetService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gonggongplan/src/main/resources/application.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gonggongplan/src/main/resources/application.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gonggongplan/src/main/resources/static/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/gonggongplan/src/main/resources/static/index.html" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClaudeCodeSessionHistory">
+    <option name="openJson" value="[&quot;0a90c6ce-fa2d-42f1-8c20-d744e9e15db1&quot;]" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$/gonggongplan">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="demo" type="f1a62948:ProjectNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 8
+}</component>
+  <component name="ProjectId" id="3IiEHN8PdSUQq5F0J4evqLXYhys" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Gradle.gonggongplan [:com.example.gonggongplan.demo.DemoApplication.main()].executor&quot;: &quot;Run&quot;,
+    &quot;Gradle.소스 다운로드.executor&quot;: &quot;Run&quot;,
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;9&quot;,
+    &quot;junie.onboarding.icon.badge.shown&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/dkekdmf/ggdashboardversion&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;모듈&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;ml.llm.LLMConfigurable&quot;,
+    &quot;to.speed.mode.migration.done&quot;: &quot;true&quot;
+  }
+}</component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.27397.103" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="디폴트 작업">
+      <changelist id="09c792ae-ceed-408a-b14e-020df276d351" name="변경" comment="" />
+      <created>1786415837991</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1786415837991</updated>
+    </task>
+    <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
